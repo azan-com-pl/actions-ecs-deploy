@@ -1,6 +1,6 @@
 name: 'Deploy to ECS'
 
-description: 'Deploy'
+description: 'Deploy to ECS by reusing existing task definition'
 
 inputs:
   task-definition:
@@ -30,12 +30,13 @@ runs:
       uses: actions/github-script@v7
       env:
         tag: ${{ inputs.ecr-tag }}
+        service: ${{ inputs.service }}
       with:
         script: |
           await github.rest.git.getRef({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            ref: 'tags/${{ env.tag }}'
+            ref: 'tags/${{ env.service }}-${{ env.tag }}'
           })
 
     - name: Download task definition
