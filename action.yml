@@ -1,0 +1,66 @@
+name: 'Deploy to ECS'
+
+description: 'Deploy'
+
+inputs:
+  task-definition:
+    description: 'Task definition to use as a template for new deployment'
+    required: true
+
+  service:
+    description: 'ECS service for deployment'
+    required: true
+
+  cluster:
+    description: 'ECS cluster for deployment'
+    required: true
+
+  ecr-repository:
+    description: 'ECR repository for deployment'
+    required: true
+
+  ecr-tag:
+    description: 'ECR tag for deployment'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate tag
+      uses: actions/github-script@v7
+      env:
+        tag: ${{ inputs.ecr-tag }}
+      with:
+        script: |
+          await github.rest.git.getRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: 'tags/${{ env.tag }}'
+          })
+
+    - name: Download task definition
+      shell: bash
+      run: |
+        aws ecs describe-task-definition --task-definition ${{ inputs.task-definition }} --query taskDefinition > task-definition.json
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: ${{ inputs.service }}
+        image: ${{ inputs.ecr-repository }}:${{ inputs.ecr-tag }}
+
+    - name: Drop fields returned by describe-task-definition and not accepted by register-task-definition
+      shell: bash
+      run: |
+        json_file="${{ steps.task-def.outputs.task-definition }}"
+        jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt, .deregisteredBy, .attachments, .tags, .cpu, .memory, .inferenceAccelerators)' $json_file > task-definition-corrected.json
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: task-definition-corrected.json
+        service: ${{ inputs.service }}
+        cluster: ${{ inputs.cluster }}
+        wait-for-service-stability: true

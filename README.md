@@ -1,2 +1,3 @@
-# actions-ecs-deploy
-Github Actions for ECS deploy
+# Github Actions for ECS deploy
+
+Reusable composite action to be used with deployment workflows.
