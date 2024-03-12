@@ -23,6 +23,11 @@ inputs:
     description: 'ECR tag for deployment'
     required: true
 
+  github-token:
+    description: 'Access token for validating tag'
+    required: true
+    default: ${{ github.token }}
+
 runs:
   using: "composite"
   steps:
@@ -32,6 +37,7 @@ runs:
         tag: ${{ inputs.ecr-tag }}
         service: ${{ inputs.service }}
       with:
+        github-token: ${{ inputs.github-token }}
         script: |
           await github.rest.git.getRef({
             owner: context.repo.owner,
