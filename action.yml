@@ -68,7 +68,7 @@ runs:
       shell: bash
       run: |
         json_file="${{ steps.task-def.outputs.task-definition }}"
-        jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt, .deregisteredBy, .attachments, .tags, .cpu, .memory, .inferenceAccelerators)' $json_file > task-definition-corrected.json
+        jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt, .deregisteredBy, .attachments, .tags, .inferenceAccelerators)' $json_file > task-definition-corrected.json
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
